@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SlipDelete</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #181825 100%);
+            color: #cdd6f4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            touch-action: pan-y;
+        }
+        .header {
+            background: rgba(30, 30, 46, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(203, 166, 247, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #cba6f7, #89b4fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stats { display: flex; gap: 15px; font-size: 12px; }
+        .stat { background: rgba(203, 166, 247, 0.1); padding: 4px 10px; border-radius: 12px; }
+        .progress-bar { height: 3px; background: rgba(203, 166, 247, 0.2); position: relative; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #cba6f7, #89b4fa); transition: width 0.3s ease; }
+        .media-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .media-content {
+            max-width: 95%;
+            max-height: 85vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 20px 30px;
+            border-radius: 16px;
+            font-size: 24px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .swipe-left { left: 20px; background: rgba(243, 139, 168, 0.9); color: #1e1e2e; }
+        .swipe-right { right: 20px; background: rgba(166, 227, 161, 0.9); color: #1e1e2e; }
+        .media-content img, .media-content video {
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .audio-player {
+            text-align: center;
+            padding: 40px;
+        }
+        .audio-icon { font-size: 80px; margin-bottom: 20px; }
+        .audio-player audio { width: 90%; max-width: 500px; }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(30, 30, 46, 0.95);
+            border-top: 1px solid rgba(203, 166, 247, 0.1);
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 100px;
+            justify-content: center;
+        }
+        .btn-delete { background: linear-gradient(135deg, #f38ba8, #eba0ac); color: #1e1e2e; }
+        .btn-keep { background: linear-gradient(135deg, #a6e3a1, #94e2d5); color: #1e1e2e; }
+        .btn-restore { background: linear-gradient(135deg, #89b4fa, #74c7ec); color: #1e1e2e; }
+        .btn:active { transform: scale(0.95); opacity: 0.8; }
+        .notification {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            padding: 12px 24px;
+            border-radius: 12px;
+            background: rgba(30, 30, 46, 0.95);
+            border: 2px solid #cba6f7;
+            color: #cdd6f4;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .shortcuts {
+            text-align: center;
+            padding: 8px;
+            font-size: 11px;
+            color: #6c7086;
+            background: rgba(24, 24, 37, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">✨ SlipDelete</div>
+        <div class="stats">
+            <div class="stat" id="progress">0 / 0</div>
+        </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width: 0%"></div></div>
+    <div class="media-container" id="mediaContainer">
+        <div class="media-content" id="mediaContent">
+            <div style="text-align: center; color: #6c7086;">
+                <div style="font-size: 48px; margin-bottom: 20px;">📂</div>
+                <div>Loading...</div>
+            </div>
+        </div>
+        <div class="swipe-indicator swipe-left" id="swipeLeft">🗑 DELETE</div>
+        <div class="swipe-indicator swipe-right" id="swipeRight">✓ KEEP</div>
+    </div>
+    <div class="controls">
+        <button class="btn btn-delete" onclick="deleteCurrent()">🗑 Delete</button>
+        <button class="btn btn-keep" onclick="keepCurrent()">✓ Keep</button>
+        <button class="btn btn-restore" onclick="restoreLast()">↩ Restore</button>
+    </div>
+    <div class="shortcuts">Swipe firmly ← Delete | Swipe firmly → Keep | D = Delete | K = Keep | Z = Restore</div>
+    <div class="notification" id="notification"></div>
+    <script>
+        let currentFile = null;
+        let touchStartX = 0;
+        let touchCurrentX = 0;
+        let isSwiping = false;
+        let currentIndex = 0;
+        let totalFiles = 0;
+        let lastRenderedPath = null;
+
+        const mediaContent = document.getElementById('mediaContent');
+        const swipeLeft = document.getElementById('swipeLeft');
+        const swipeRight = document.getElementById('swipeRight');
+        const mediaContainer = document.getElementById('mediaContainer');
+        const notification = document.getElementById('notification');
+
+        async function establishSession() {
+            try {
+                const res = await fetch('/api/session', { method: 'GET', credentials: 'same-origin' });
+                if (res.status === 409) {
+                    document.cookie = 'session_id=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+                    const retry = await fetch('/api/session', { method: 'GET', credentials: 'same-origin' });
+                    return retry.ok;
+                }
+                return res.ok;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function apiFetch(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers },
+                credentials: 'same-origin'
+            });
+            if (res.status === 409) {
+                const retry = await fetch('/api/session', { method: 'GET', credentials: 'same-origin' });
+                if (retry.ok) {
+                    const retryRes = await fetch(url, {
+                        ...options,
+                        headers: { 'Content-Type': 'application/json', ...options.headers },
+                        credentials: 'same-origin'
+                    });
+                    return retryRes;
+                }
+                showNotification('⚠ Server is in use by another device', '#f9e2af');
+                return null;
+            }
+            if (!res.ok) throw new Error('API error');
+            return res;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function showNotification(message, color) {
+            notification.textContent = message;
+            notification.style.borderColor = color;
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 2000);
+        }
+
+        async function loadState() {
+            try {
+                const res = await apiFetch('/api/state');
+                if (!res) return;
+                const data = await res.json();
+                currentIndex = data.current_index || 0;
+                totalFiles = data.total_files || 0;
+                updateStats(data.stats);
+                document.getElementById('progress').textContent = data.progress || '0 / 0';
+                document.getElementById('filename').textContent = data.filename || 'No file selected';
+
+                const newPath = data.current_file ? data.current_file.path : null;
+                if (newPath !== lastRenderedPath) {
+                    lastRenderedPath = newPath;
+                    currentFile = data.current_file;
+                    renderMedia(data.current_file);
+                }
+            } catch (e) {
+                console.error('Error loading state:', e);
+            }
+        }
+
+        function updateStats(stats) {
+            const total = stats.total || 0;
+            const remaining = stats.remaining || 0;
+            const percentage = total > 0 ? ((total - remaining) / total * 100) : 0;
+            document.getElementById('progressBar').style.width = percentage + '%';
+        }
+
+        function renderMedia(file) {
+            if (!file) {
+                mediaContent.innerHTML = '<div style="text-align: center; color: #6c7086; padding: 40px;"><div style="font-size: 64px; margin-bottom: 20px;">✅</div><div style="font-size: 18px;">All files processed!</div></div>';
+                return;
+            }
+            const ext = file.name.split('.').pop().toLowerCase();
+            const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'svg'];
+            const videoExts = ['mp4', 'avi', 'mkv', 'mov', 'webm', 'm4v', 'mpg', 'mpeg'];
+            const audioExts = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a', 'opus'];
+
+            const isImage = imageExts.includes(ext);
+            const isVideo = videoExts.includes(ext);
+            const isAudio = audioExts.includes(ext);
+
+            if (isVideo) {
+                mediaContent.innerHTML = `<video id="mediaPlayer" controls autoplay playsinline style="max-width:95%;max-height:90%;outline:none;border-radius:8px;"><source src="/api/media?path=${encodeURIComponent(file.path)}" type="video/mp4">Your browser does not support video.</video>`;
+            } else if (isAudio) {
+                mediaContent.innerHTML = `<div class="audio-player"><div class="audio-icon">🎵</div><div style="font-size:18px;font-weight:600;margin-bottom:20px;">${file.name}</div><audio id="mediaPlayer" controls autoplay style="width:90%;max-width:400px;outline:none;"><source src="/api/media?path=${encodeURIComponent(file.path)}" type="audio/mpeg">Your browser does not support audio.</audio></div>`;
+            } else {
+                mediaContent.innerHTML = `<img src="/api/media?path=${encodeURIComponent(file.path)}" alt="${file.name}" style="max-width:95%;max-height:90%;object-fit:contain;border-radius:8px;">`;
+            }
+            setTimeout(tryAutoplay, 100);
+        }
+
+        function tryAutoplay() {
+            const player = document.getElementById('mediaPlayer');
+            if (!player) return;
+            const playPromise = player.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    const overlay = document.createElement('div');
+                    overlay.id = 'autoplayOverlay';
+                    overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);color:#cdd6f4;font-size:18px;font-weight:600;z-index:20;cursor:pointer;border-radius:12px;';
+                    overlay.textContent = '👆 Tap to play';
+                    mediaContent.appendChild(overlay);
+                    overlay.addEventListener('click', () => { player.play(); overlay.remove(); });
+                });
+            }
+        }
+
+        function stopCurrentMedia() {
+            const player = document.getElementById('mediaPlayer');
+            if (player) { player.pause(); player.removeAttribute('src'); player.load(); }
+            const overlay = document.getElementById('autoplayOverlay');
+            if (overlay) overlay.remove();
+        }
+
+        async function deleteCurrent() {
+            if (!currentFile) return;
+            const name = currentFile.name;
+            stopCurrentMedia();
+            lastRenderedPath = null;
+            loadState();
+            try {
+                const res = await apiFetch('/api/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({}) });
+                if (res) {
+                    const data = await res.json();
+                    if (data.success) showNotification('🗑 DELETED: ' + name, '#f38ba8');
+                    else showNotification('⚠ ' + data.message, '#f9e2af');
+                }
+            } catch (e) {}
+        }
+
+        async function keepCurrent() {
+            if (!currentFile) return;
+            try {
+                const res = await apiFetch('/api/keep', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({}) });
+                if (!res) return;
+                const data = await res.json();
+                showNotification('✓ KEPT: ' + data.name, '#a6e3a1');
+                lastRenderedPath = null;
+                loadState();
+            } catch (e) { showNotification('Error keeping file', '#f38ba8'); }
+        }
+
+        async function restoreLast() {
+            try {
+                const res = await apiFetch('/api/restore', { method: 'POST' });
+                if (!res) return;
+                const data = await res.json();
+                if (data.success) showNotification('↩ RESTORED: ' + data.name, '#89b4fa');
+                else showNotification(data.message, '#f9e2af');
+                lastRenderedPath = null;
+                loadState();
+            } catch (e) { showNotification('Error restoring file', '#f38ba8'); }
+        }
+
+        let swipeThreshold = 160;
+        let deadZone = 60;
+
+        document.addEventListener('touchstart', function(e) {
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+            touchStartX = e.touches[0].clientX;
+            touchCurrentX = touchStartX;
+            isSwiping = true;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!isSwiping) return;
+            touchCurrentX = e.touches[0].clientX;
+            const diff = touchCurrentX - touchStartX;
+            if (Math.abs(diff) > deadZone) {
+                if (diff < 0) {
+                    const opacity = Math.min(Math.abs(diff) / swipeThreshold, 1);
+                    swipeLeft.style.opacity = opacity;
+                    swipeRight.style.opacity = 0;
+                    mediaContent.style.transform = `translateX(${Math.max(diff, -swipeThreshold)}px)`;
+                } else {
+                    const opacity = Math.min(diff / swipeThreshold, 1);
+                    swipeRight.style.opacity = opacity;
+                    swipeLeft.style.opacity = 0;
+                    mediaContent.style.transform = `translateX(${Math.min(diff, swipeThreshold)}px)`;
+                }
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', function(e) {
+            if (!isSwiping) return;
+            isSwiping = false;
+            const diff = touchCurrentX - touchStartX;
+            mediaContent.style.transform = 'translateX(0)';
+            swipeLeft.style.opacity = 0;
+            swipeRight.style.opacity = 0;
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff < 0) deleteCurrent();
+                else keepCurrent();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'd' || e.key === 'D') deleteCurrent();
+            if (e.key === 'k' || e.key === 'K') keepCurrent();
+            if (e.key === 'z' || e.key === 'Z') restoreLast();
+        });
+
+        establishSession().then(ok => { if (ok) loadState(); });
+        setInterval(loadState, 2000);
+    </script>
+</body>
+</html>

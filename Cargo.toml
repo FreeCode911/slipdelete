@@ -1,0 +1,19 @@
+[package]
+name = "slipdelete"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.8", features = ["json", "macros"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+image = { version = "0.25", features = ["jpeg", "png", "webp"] }
+qrcode = "0.14"
+uuid = { version = "1", features = ["v4"] }
+tower-http = { version = "0.6", features = ["cors"] }
+tower = "0.4"
+cookie = { version = "0.18", features = ["signed"] }
+walkdir = "2"
+mime_guess = "2"
+chrono = { version = "0.4", features = ["serde"] }
