@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use cookie::Cookie;
 
 pub async fn handle(state: axum::extract::State<Arc<crate::state::AppStateManager>>) -> Response {
     let session = state.session.lock().unwrap();
