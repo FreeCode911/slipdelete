@@ -1,6 +1,5 @@
-use image::{ImageFormat, ImageReader};
+use image::{GenericImageView, ImageFormat, ImageReader};
 use std::io::Cursor;
-use std::path::Path;
 
 const MAX_DIMENSION: u32 = 1200;
 

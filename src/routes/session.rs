@@ -7,7 +7,7 @@ pub async fn handle(state: axum::extract::State<Arc<crate::state::AppStateManage
     let session = state.session.lock().unwrap();
     let token = session.token.clone();
 
-    let cookie = Cookie::build("session_id", token.clone())
+    let cookie = cookie::Cookie::build(("session_id", token.clone()))
         .path("/")
         .http_only(false)
         .same_site(cookie::SameSite::Lax)

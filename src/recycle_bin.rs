@@ -1,8 +1,7 @@
 use std::ffi::OsStr;
 use std::os::windows::prelude::OsStrExt;
 use std::ptr;
-use winapi::um::shellapi::SHFileOperationW;
-use winapi::um::shellapi::SHFILEOPSTRUCTW;
+use winapi::um::shellapi::{SHFileOperationW, SHFILEOPSTRUCTW};
 use winapi::um::winnt::FILEOP_FLAGS;
 use std::mem;
 

@@ -4,7 +4,7 @@ use axum::body::Body;
 use axum::http::header;
 
 pub async fn handle(
-    state: axum::extract::State<Arc<crate::state::AppStateManager>>,
+    _state: axum::extract::State<Arc<crate::state::AppStateManager>>,
     query: axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Response {
     let filepath = match query.get("path") {
@@ -46,7 +46,7 @@ pub async fn handle(
 
     let mime_type = mime_guess::from_path(filepath)
         .first_or_octet_stream()
-        .as_ref();
+        .to_string();
 
     let mut response = Response::builder()
         .status(StatusCode::OK)

@@ -17,3 +17,4 @@ cookie = { version = "0.18", features = ["signed"] }
 walkdir = "2"
 mime_guess = "2"
 chrono = { version = "0.4", features = ["serde"] }
+winapi = { version = "0.3", features = ["shellapi", "winnt"] }

@@ -1,11 +1,8 @@
 use axum::{
-    body::Body,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde::Serialize;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ApiError {
@@ -14,10 +11,11 @@ pub struct ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let body = Json(serde_json::json!({"error": self.message}));
+        let body = serde_json::json!({"error": self.message});
+        let body_str = serde_json::to_string(&body).unwrap_or_default();
         Response::builder()
             .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(Body::from(serde_json::to_string(&body).unwrap_or_default()))
+            .body(axum::body::Body::from(body_str))
             .unwrap()
     }
 }

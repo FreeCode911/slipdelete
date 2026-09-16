@@ -1,13 +1,9 @@
 use std::sync::Arc;
-use tokio::fs;
 use axum::{
-    body::Body,
-    http::{StatusCode, Uri},
-    response::{Html, IntoResponse, Response},
+    response::Html,
     routing::{get, post},
     Router,
 };
-use cookie::Cookie;
 
 mod error;
 mod media;
