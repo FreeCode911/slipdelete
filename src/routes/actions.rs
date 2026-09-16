@@ -2,7 +2,7 @@ use std::sync::Arc;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json};
 
-pub async fn delete(state: axum::extract::State<Arc<crate::AppStateManager>>) -> impl IntoResponse {
+pub async fn delete(state: axum::extract::State<Arc<crate::state::AppStateManager>>) -> impl IntoResponse {
     let current = match state.get_current_file() {
         Some(f) => f,
         None => return (StatusCode::OK, Json(serde_json::json!({"success": false, "message": "No file to delete"}))).into_response(),
@@ -36,7 +36,7 @@ pub async fn delete(state: axum::extract::State<Arc<crate::AppStateManager>>) ->
     }
 }
 
-pub async fn keep(state: axum::extract::State<Arc<crate::AppStateManager>>) -> impl IntoResponse {
+pub async fn keep(state: axum::extract::State<Arc<crate::state::AppStateManager>>) -> impl IntoResponse {
     let current = match state.get_current_file() {
         Some(f) => f,
         None => return (StatusCode::OK, Json(serde_json::json!({"success": false, "message": "No file to keep"}))).into_response(),
@@ -55,7 +55,7 @@ pub async fn keep(state: axum::extract::State<Arc<crate::AppStateManager>>) -> i
     (StatusCode::OK, Json(serde_json::json!({"success": true, "name": file_name}))).into_response()
 }
 
-pub async fn restore(state: axum::extract::State<Arc<crate::AppStateManager>>) -> impl IntoResponse {
+pub async fn restore(state: axum::extract::State<Arc<crate::state::AppStateManager>>) -> impl IntoResponse {
     let mut app_state = state.state.lock().unwrap();
 
     if let Some(last) = app_state.deleted_files.pop() {
@@ -72,7 +72,7 @@ pub async fn restore(state: axum::extract::State<Arc<crate::AppStateManager>>) -
     }
 }
 
-pub async fn reset(state: axum::extract::State<Arc<crate::AppStateManager>>) -> impl IntoResponse {
+pub async fn reset(state: axum::extract::State<Arc<crate::state::AppStateManager>>) -> impl IntoResponse {
     {
         let mut app_state = state.state.lock().unwrap();
         app_state.kept_files.clear();

@@ -4,7 +4,7 @@ use axum::body::Body;
 use axum::http::header;
 
 pub async fn handle(
-    state: axum::extract::State<Arc<crate::AppStateManager>>,
+    state: axum::extract::State<Arc<crate::state::AppStateManager>>,
     query: axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Response {
     let filepath = match query.get("path") {
